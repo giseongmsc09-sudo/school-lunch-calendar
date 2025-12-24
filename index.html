@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>대전외고 급식표</title>
+    <title>기성중학교 급식표</title>
     <style>
         :root {
             --bg-color: #ffffff;
@@ -94,6 +94,12 @@
             word-break: keep-all;
         }
         
+        .debug-info {
+            margin-top: 10px;
+            font-size: 0.7rem;
+            color: #ccc;
+        }
+
         .loading-msg { margin-top: 20px; color: #888; }
 
         @media (max-width: 600px) {
@@ -124,19 +130,12 @@
 
     <div class="calendar-container" id="calendar"></div>
     <div id="status-msg" class="loading-msg"></div>
+    <div id="debug-msg" class="debug-info"></div>
 
     <script>
         // ============================================
-        // 설정 부분 (여기를 수정했습니다)
-        // ============================================
         const ATPT_OFCDC_SC_CODE = "G10"; 
         const SD_SCHUL_CODE = "7451011"; // 대전외국어고등학교
-        
-        // 중요: pSize를 1000으로 늘려야 한 달치 3끼 데이터가 안 잘리고 다 들어옵니다.
-        const PAGE_SIZE = "1000"; 
-        
-        // 중요: 점심(2)만 가져오도록 설정 (1:조식, 2:중식, 3:석식)
-        const MEAL_CODE = "2"; 
         // ============================================
 
         let currentYear = new Date().getFullYear();
@@ -155,10 +154,12 @@
             const calendar = document.getElementById('calendar');
             const title = document.getElementById('month-title');
             const statusMsg = document.getElementById('status-msg');
+            const debugMsg = document.getElementById('debug-msg');
 
             title.innerText = `${currentYear}년 ${currentMonth}월`;
             calendar.innerHTML = ''; 
             statusMsg.innerText = '데이터를 불러오는 중...';
+            debugMsg.innerText = '';
 
             const days = ['월', '화', '수', '목', '금'];
             days.forEach(d => {
@@ -172,23 +173,30 @@
             const fromDate = `${currentYear}${String(currentMonth).padStart(2, '0')}01`;
             const toDate = `${currentYear}${String(currentMonth).padStart(2, '0')}${lastDate}`;
             
-            // API 호출 주소 생성 (pSize=1000 과 MMEAL_SC_CODE=2 가 핵심입니다)
-            const url = `https://open.neis.go.kr/hub/mealServiceDietInfo?Type=json&pIndex=1&pSize=${PAGE_SIZE}&ATPT_OFCDC_SC_CODE=${ATPT_OFCDC_SC_CODE}&SD_SCHUL_CODE=${SD_SCHUL_CODE}&MLSV_FROM_YMD=${fromDate}&MLSV_TO_YMD=${toDate}&MMEAL_SC_CODE=${MEAL_CODE}`;
+            // [수정 핵심 1] pSize=1000으로 모든 데이터 요청 (조/중/석식 포함)
+            // [수정 핵심 2] &_t=${Date.now()}를 추가하여 브라우저 캐시 무시
+            const url = `https://open.neis.go.kr/hub/mealServiceDietInfo?Type=json&pIndex=1&pSize=1000&ATPT_OFCDC_SC_CODE=${ATPT_OFCDC_SC_CODE}&SD_SCHUL_CODE=${SD_SCHUL_CODE}&MLSV_FROM_YMD=${fromDate}&MLSV_TO_YMD=${toDate}&_t=${Date.now()}`;
 
             fetch(url)
                 .then(res => res.json())
                 .then(data => {
                     statusMsg.innerText = '';
                     let menuMap = {};
+                    let count = 0;
                     
                     if (data.mealServiceDietInfo) {
                         data.mealServiceDietInfo[1].row.forEach(item => {
-                            let cleanMenu = item.DDISH_NM
-                                .replace(/[0-9.]/g, "")
-                                .replace(/\(\)/g, "")
-                                .replace(/<br\/>/g, "<br>");
-                            menuMap[item.MLSV_YMD] = cleanMenu;
+                            // [수정 핵심 3] 데이터를 받아온 후, 여기서 '점심(2)'만 골라냄
+                            if (item.MMEAL_SC_CODE === "2") {
+                                let cleanMenu = item.DDISH_NM
+                                    .replace(/[0-9.]/g, "")
+                                    .replace(/\(\)/g, "")
+                                    .replace(/<br\/>/g, "<br>");
+                                menuMap[item.MLSV_YMD] = cleanMenu;
+                                count++;
+                            }
                         });
+                        debugMsg.innerText = `데이터 수신 완료 (점심 메뉴 ${count}개 로드됨)`;
                     } else {
                         statusMsg.innerText = "이 달의 급식 정보가 없습니다.";
                     }
@@ -230,7 +238,7 @@
                 })
                 .catch(err => {
                     console.error(err);
-                    statusMsg.innerText = '정보를 불러오지 못했습니다.';
+                    statusMsg.innerText = '정보를 불러오지 못했습니다. (네트워크 오류 등)';
                 });
         }
     </script>
