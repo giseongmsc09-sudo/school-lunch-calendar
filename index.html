@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>월간 점심 급식표</title>
+    <title>대전외고 급식표</title>
     <style>
         :root {
             --bg-color: #ffffff;
@@ -43,6 +43,7 @@
             padding: 5px 12px;
             font-size: 1rem;
             color: var(--text-color);
+            transition: 0.2s;
         }
         .nav-btn:hover { background-color: var(--header-bg); }
 
@@ -72,6 +73,7 @@
             padding: 8px;
             font-size: 0.8rem;
             vertical-align: top;
+            position: relative;
             background-color: var(--bg-color);
         }
 
@@ -124,12 +126,18 @@
     <div id="status-msg" class="loading-msg"></div>
 
     <script>
-        // ▼▼▼ 수정된 부분 ▼▼▼
+        // ============================================
+        // 설정 부분 (여기를 수정했습니다)
+        // ============================================
         const ATPT_OFCDC_SC_CODE = "G10"; 
         const SD_SCHUL_CODE = "7451011"; // 대전외국어고등학교
-        const API_KEY = "Type=json&pIndex=1&pSize=1000"; // 데이터 개수를 1000개로 대폭 늘림
-        const MEAL_CODE = "2"; // 1:조식, 2:중식, 3:석식 (중식만 가져오도록 설정)
-        // ▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲
+        
+        // 중요: pSize를 1000으로 늘려야 한 달치 3끼 데이터가 안 잘리고 다 들어옵니다.
+        const PAGE_SIZE = "1000"; 
+        
+        // 중요: 점심(2)만 가져오도록 설정 (1:조식, 2:중식, 3:석식)
+        const MEAL_CODE = "2"; 
+        // ============================================
 
         let currentYear = new Date().getFullYear();
         let currentMonth = new Date().getMonth() + 1;
@@ -164,8 +172,8 @@
             const fromDate = `${currentYear}${String(currentMonth).padStart(2, '0')}01`;
             const toDate = `${currentYear}${String(currentMonth).padStart(2, '0')}${lastDate}`;
             
-            // 점심(MMEAL_SC_CODE=2) 필터 추가
-            const url = `https://open.neis.go.kr/hub/mealServiceDietInfo?${API_KEY}&ATPT_OFCDC_SC_CODE=${ATPT_OFCDC_SC_CODE}&SD_SCHUL_CODE=${SD_SCHUL_CODE}&MLSV_FROM_YMD=${fromDate}&MLSV_TO_YMD=${toDate}&MMEAL_SC_CODE=${MEAL_CODE}`;
+            // API 호출 주소 생성 (pSize=1000 과 MMEAL_SC_CODE=2 가 핵심입니다)
+            const url = `https://open.neis.go.kr/hub/mealServiceDietInfo?Type=json&pIndex=1&pSize=${PAGE_SIZE}&ATPT_OFCDC_SC_CODE=${ATPT_OFCDC_SC_CODE}&SD_SCHUL_CODE=${SD_SCHUL_CODE}&MLSV_FROM_YMD=${fromDate}&MLSV_TO_YMD=${toDate}&MMEAL_SC_CODE=${MEAL_CODE}`;
 
             fetch(url)
                 .then(res => res.json())
@@ -182,7 +190,6 @@
                             menuMap[item.MLSV_YMD] = cleanMenu;
                         });
                     } else {
-                        // 데이터가 아예 없는 경우 (방학 등)
                         statusMsg.innerText = "이 달의 급식 정보가 없습니다.";
                     }
 
