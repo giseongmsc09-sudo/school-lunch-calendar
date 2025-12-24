@@ -3,14 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>월간 급식표</title>
+    <title>월간 점심 급식표</title>
     <style>
         :root {
             --bg-color: #ffffff;
             --text-color: #37352f;
             --border-color: #e0e0e0;
             --header-bg: #f7f6f3;
-            --today-bg: #e3f2fd; /* 오늘 날짜 배경색 */
+            --today-bg: #e3f2fd;
             --accent-color: #eb5757;
         }
 
@@ -25,7 +25,6 @@
             align-items: center;
         }
 
-        /* 1. 상단 날짜 및 버튼 */
         .header {
             display: flex;
             align-items: center;
@@ -44,23 +43,18 @@
             padding: 5px 12px;
             font-size: 1rem;
             color: var(--text-color);
-            transition: 0.2s;
         }
-        .nav-btn:hover {
-            background-color: var(--header-bg);
-        }
+        .nav-btn:hover { background-color: var(--header-bg); }
 
-        /* 2. 달력 레이아웃 */
         .calendar-container {
             display: grid;
-            grid-template-columns: repeat(5, 1fr); /* 월~금 5칸 */
+            grid-template-columns: repeat(5, 1fr);
             width: 100%;
             max-width: 900px;
             border-top: 1px solid var(--border-color);
             border-left: 1px solid var(--border-color);
         }
 
-        /* 3. 요일 헤더 */
         .day-header {
             background-color: var(--header-bg);
             padding: 10px;
@@ -71,7 +65,6 @@
             font-size: 0.9rem;
         }
 
-        /* 4. 날짜 칸 디자인 */
         .day-cell {
             border-bottom: 1px solid var(--border-color);
             border-right: 1px solid var(--border-color);
@@ -79,7 +72,6 @@
             padding: 8px;
             font-size: 0.8rem;
             vertical-align: top;
-            position: relative;
             background-color: var(--bg-color);
         }
 
@@ -90,42 +82,25 @@
             color: #888;
         }
         
-        .today {
-            background-color: var(--today-bg);
-        }
-        .today .day-number {
-            color: var(--accent-color);
-        }
+        .today { background-color: var(--today-bg); }
+        .today .day-number { color: var(--accent-color); }
 
         .menu-text {
             font-size: 0.85rem;
             line-height: 1.5;
             color: var(--text-color);
-            word-break: keep-all; /* 단어 단위 줄바꿈 */
+            word-break: keep-all;
         }
         
-        .loading-msg {
-            margin-top: 20px;
-            color: #888;
-        }
+        .loading-msg { margin-top: 20px; color: #888; }
 
-        /* 모바일 대응 */
         @media (max-width: 600px) {
-            .calendar-container {
-                display: flex;
-                flex-direction: column;
-                border: none;
-            }
+            .calendar-container { display: flex; flex-direction: column; border: none; }
             .day-header { display: none; }
-            .day-cell {
-                border: 1px solid var(--border-color);
-                margin-bottom: 10px;
-                border-radius: 8px;
-            }
+            .day-cell { border: 1px solid var(--border-color); margin-bottom: 10px; border-radius: 8px; }
             .empty-cell { display: none; }
         }
 
-        /* 다크 모드 대응 */
         @media (prefers-color-scheme: dark) {
             :root {
                 --bg-color: #191919;
@@ -140,51 +115,43 @@
 <body>
 
     <div class="header">
-        <button class="nav-btn" onclick="changeMonth(-1)">&#10094;</button> <div class="title" id="month-title"></div>
-        <button class="nav-btn" onclick="changeMonth(1)">&#10095;</button> </div>
+        <button class="nav-btn" onclick="changeMonth(-1)">&#10094;</button>
+        <div class="title" id="month-title"></div>
+        <button class="nav-btn" onclick="changeMonth(1)">&#10095;</button>
+    </div>
 
-    <div class="calendar-container" id="calendar">
-        </div>
+    <div class="calendar-container" id="calendar"></div>
     <div id="status-msg" class="loading-msg"></div>
 
     <script>
-        // ▼▼▼ 학교 정보 설정 ▼▼▼
-        const ATPT_OFCDC_SC_CODE = "G10";  // 대전교육청
-        const SD_SCHUL_CODE = "7451011";   // 요청하신 학교 코드
-        const API_KEY = "Type=json&pIndex=1&pSize=100";
-        // ▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲
+        // ▼▼▼ 수정된 부분 ▼▼▼
+        const ATPT_OFCDC_SC_CODE = "G10"; 
+        const SD_SCHUL_CODE = "7451011"; // 대전외국어고등학교
+        const API_KEY = "Type=json&pIndex=1&pSize=1000"; // 데이터 개수를 1000개로 대폭 늘림
+        const MEAL_CODE = "2"; // 1:조식, 2:중식, 3:석식 (중식만 가져오도록 설정)
+        // ▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲
 
         let currentYear = new Date().getFullYear();
-        let currentMonth = new Date().getMonth() + 1; // 1~12
+        let currentMonth = new Date().getMonth() + 1;
 
-        // 시작하면 달력 그리기
         renderCalendar();
 
-        // 달 변경 함수
         function changeMonth(delta) {
             currentMonth += delta;
-            if (currentMonth > 12) {
-                currentMonth = 1;
-                currentYear++;
-            } else if (currentMonth < 1) {
-                currentMonth = 12;
-                currentYear--;
-            }
+            if (currentMonth > 12) { currentMonth = 1; currentYear++; }
+            else if (currentMonth < 1) { currentMonth = 12; currentYear--; }
             renderCalendar();
         }
 
-        // 달력 그리기 핵심 함수
         function renderCalendar() {
             const calendar = document.getElementById('calendar');
             const title = document.getElementById('month-title');
             const statusMsg = document.getElementById('status-msg');
 
-            // 제목 설정 (예: 2024년 12월)
             title.innerText = `${currentYear}년 ${currentMonth}월`;
             calendar.innerHTML = ''; 
             statusMsg.innerText = '데이터를 불러오는 중...';
 
-            // 1. 요일 헤더 만들기 (월~금)
             const days = ['월', '화', '수', '목', '금'];
             days.forEach(d => {
                 const div = document.createElement('div');
@@ -193,44 +160,42 @@
                 calendar.appendChild(div);
             });
 
-            // 2. 해당 월의 날짜 계산
             const lastDate = new Date(currentYear, currentMonth, 0).getDate();
-
-            // 3. API 데이터 요청
             const fromDate = `${currentYear}${String(currentMonth).padStart(2, '0')}01`;
             const toDate = `${currentYear}${String(currentMonth).padStart(2, '0')}${lastDate}`;
-            const url = `https://open.neis.go.kr/hub/mealServiceDietInfo?${API_KEY}&ATPT_OFCDC_SC_CODE=${ATPT_OFCDC_SC_CODE}&SD_SCHUL_CODE=${SD_SCHUL_CODE}&MLSV_FROM_YMD=${fromDate}&MLSV_TO_YMD=${toDate}`;
+            
+            // 점심(MMEAL_SC_CODE=2) 필터 추가
+            const url = `https://open.neis.go.kr/hub/mealServiceDietInfo?${API_KEY}&ATPT_OFCDC_SC_CODE=${ATPT_OFCDC_SC_CODE}&SD_SCHUL_CODE=${SD_SCHUL_CODE}&MLSV_FROM_YMD=${fromDate}&MLSV_TO_YMD=${toDate}&MMEAL_SC_CODE=${MEAL_CODE}`;
 
             fetch(url)
                 .then(res => res.json())
                 .then(data => {
                     statusMsg.innerText = '';
-                    
-                    // 메뉴 데이터 저장소
                     let menuMap = {};
+                    
                     if (data.mealServiceDietInfo) {
                         data.mealServiceDietInfo[1].row.forEach(item => {
                             let cleanMenu = item.DDISH_NM
-                                .replace(/[0-9.]/g, "")      // 알레르기 번호 제거
-                                .replace(/\(\)/g, "")        // 빈 괄호 제거
-                                .replace(/<br\/>/g, "<br>"); // 줄바꿈 정리
+                                .replace(/[0-9.]/g, "")
+                                .replace(/\(\)/g, "")
+                                .replace(/<br\/>/g, "<br>");
                             menuMap[item.MLSV_YMD] = cleanMenu;
                         });
+                    } else {
+                        // 데이터가 아예 없는 경우 (방학 등)
+                        statusMsg.innerText = "이 달의 급식 정보가 없습니다.";
                     }
 
-                    // 4. 달력 칸 채우기
                     let hasPrintedFirstDay = false;
 
                     for (let d = 1; d <= lastDate; d++) {
                         const dateObj = new Date(currentYear, currentMonth - 1, d);
-                        const dayOfWeek = dateObj.getDay(); // 0(일) ~ 6(토)
+                        const dayOfWeek = dateObj.getDay(); 
 
-                        // 주말(토, 일)은 건너뛰기
                         if (dayOfWeek === 0 || dayOfWeek === 6) continue;
 
-                        // 달력 첫 시작 요일 맞추기 (빈 칸 채우기)
                         if (!hasPrintedFirstDay) {
-                            const emptyCells = dayOfWeek - 1; // 월(1)이면 0칸, 화(2)면 1칸...
+                            const emptyCells = dayOfWeek - 1; 
                             for (let i = 0; i < emptyCells; i++) {
                                 const emptyDiv = document.createElement('div');
                                 emptyDiv.className = 'day-cell empty-cell';
@@ -239,11 +204,9 @@
                             hasPrintedFirstDay = true;
                         }
 
-                        // 날짜 셀 만들기
                         const cell = document.createElement('div');
                         cell.className = 'day-cell';
                         
-                        // 오늘 날짜 표시
                         const today = new Date();
                         if (currentYear === today.getFullYear() && 
                             currentMonth === (today.getMonth() + 1) && 
@@ -251,9 +214,8 @@
                             cell.classList.add('today');
                         }
 
-                        // 메뉴 넣기
                         const ymd = `${currentYear}${String(currentMonth).padStart(2, '0')}${String(d).padStart(2, '0')}`;
-                        const menu = menuMap[ymd] || ""; // 메뉴 없으면 빈칸
+                        const menu = menuMap[ymd] || ""; 
 
                         cell.innerHTML = `<span class="day-number">${d}일</span><div class="menu-text">${menu}</div>`;
                         calendar.appendChild(cell);
@@ -261,7 +223,7 @@
                 })
                 .catch(err => {
                     console.error(err);
-                    statusMsg.innerText = '급식 정보를 불러오지 못했습니다.';
+                    statusMsg.innerText = '정보를 불러오지 못했습니다.';
                 });
         }
     </script>
