@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>기성중학교 급식표</title>
+    <title>대전외고 급식 (분할로딩)</title>
     <style>
         :root {
             --bg-color: #ffffff;
@@ -108,8 +108,7 @@
             .day-cell { border: 1px solid var(--border-color); margin-bottom: 10px; border-radius: 8px; }
             .empty-cell { display: none; }
         }
-
-        @media (prefers-color-scheme: dark) {
+         @media (prefers-color-scheme: dark) {
             :root {
                 --bg-color: #191919;
                 --text-color: #d9d9d9;
@@ -133,10 +132,9 @@
     <div id="debug-msg" class="debug-info"></div>
 
     <script>
-        // ============================================
         const ATPT_OFCDC_SC_CODE = "G10"; 
         const SD_SCHUL_CODE = "7451011"; // 대전외국어고등학교
-        // ============================================
+        const API_KEY = "Type=json&pIndex=1&pSize=100"; // 분할하므로 100개면 충분함
 
         let currentYear = new Date().getFullYear();
         let currentMonth = new Date().getMonth() + 1;
@@ -161,49 +159,63 @@
             statusMsg.innerText = '데이터를 불러오는 중...';
             debugMsg.innerText = '';
 
-            const days = ['월', '화', '수', '목', '금'];
-            days.forEach(d => {
-                const div = document.createElement('div');
-                div.className = 'day-header';
-                div.innerText = d;
-                calendar.appendChild(div);
+            // 1. 기간 설정 (상순, 중순, 하순으로 쪼개기)
+            const lastDay = new Date(currentYear, currentMonth, 0).getDate();
+            const yearStr = currentYear;
+            const monthStr = String(currentMonth).padStart(2, '0');
+            
+            // 구간 1: 1일 ~ 10일
+            const range1 = { start: `${yearStr}${monthStr}01`, end: `${yearStr}${monthStr}10` };
+            // 구간 2: 11일 ~ 20일
+            const range2 = { start: `${yearStr}${monthStr}11`, end: `${yearStr}${monthStr}20` };
+            // 구간 3: 21일 ~ 말일
+            const range3 = { start: `${yearStr}${monthStr}21`, end: `${yearStr}${monthStr}${lastDay}` };
+
+            const ranges = [range1, range2, range3];
+            
+            // 2. 여러 번 요청 보내기 (Promise.all)
+            const requests = ranges.map(range => {
+                const url = `https://open.neis.go.kr/hub/mealServiceDietInfo?${API_KEY}&ATPT_OFCDC_SC_CODE=${ATPT_OFCDC_SC_CODE}&SD_SCHUL_CODE=${SD_SCHUL_CODE}&MLSV_FROM_YMD=${range.start}&MLSV_TO_YMD=${range.end}&_t=${Date.now()}`;
+                return fetch(url).then(res => res.json());
             });
 
-            const lastDate = new Date(currentYear, currentMonth, 0).getDate();
-            const fromDate = `${currentYear}${String(currentMonth).padStart(2, '0')}01`;
-            const toDate = `${currentYear}${String(currentMonth).padStart(2, '0')}${lastDate}`;
-            
-            // [수정 핵심 1] pSize=1000으로 모든 데이터 요청 (조/중/석식 포함)
-            // [수정 핵심 2] &_t=${Date.now()}를 추가하여 브라우저 캐시 무시
-            const url = `https://open.neis.go.kr/hub/mealServiceDietInfo?Type=json&pIndex=1&pSize=1000&ATPT_OFCDC_SC_CODE=${ATPT_OFCDC_SC_CODE}&SD_SCHUL_CODE=${SD_SCHUL_CODE}&MLSV_FROM_YMD=${fromDate}&MLSV_TO_YMD=${toDate}&_t=${Date.now()}`;
-
-            fetch(url)
-                .then(res => res.json())
-                .then(data => {
+            Promise.all(requests)
+                .then(results => {
                     statusMsg.innerText = '';
                     let menuMap = {};
-                    let count = 0;
-                    
-                    if (data.mealServiceDietInfo) {
-                        data.mealServiceDietInfo[1].row.forEach(item => {
-                            // [수정 핵심 3] 데이터를 받아온 후, 여기서 '점심(2)'만 골라냄
-                            if (item.MMEAL_SC_CODE === "2") {
-                                let cleanMenu = item.DDISH_NM
-                                    .replace(/[0-9.]/g, "")
-                                    .replace(/\(\)/g, "")
-                                    .replace(/<br\/>/g, "<br>");
-                                menuMap[item.MLSV_YMD] = cleanMenu;
-                                count++;
-                            }
-                        });
-                        debugMsg.innerText = `데이터 수신 완료 (점심 메뉴 ${count}개 로드됨)`;
-                    } else {
-                        statusMsg.innerText = "이 달의 급식 정보가 없습니다.";
-                    }
+                    let totalCount = 0;
+
+                    // 3. 받아온 결과 합치기
+                    results.forEach(data => {
+                        if (data.mealServiceDietInfo) {
+                            data.mealServiceDietInfo[1].row.forEach(item => {
+                                // 점심(2)만 필터링
+                                if (item.MMEAL_SC_CODE === "2") {
+                                    let cleanMenu = item.DDISH_NM
+                                        .replace(/[0-9.]/g, "")
+                                        .replace(/\(\)/g, "")
+                                        .replace(/<br\/>/g, "<br>");
+                                    menuMap[item.MLSV_YMD] = cleanMenu;
+                                    totalCount++;
+                                }
+                            });
+                        }
+                    });
+
+                    debugMsg.innerText = `분할 로딩 완료: 총 ${totalCount}개의 점심 메뉴를 가져왔습니다.`;
+
+                    // 4. 달력 그리기
+                    const days = ['월', '화', '수', '목', '금'];
+                    days.forEach(d => {
+                        const div = document.createElement('div');
+                        div.className = 'day-header';
+                        div.innerText = d;
+                        calendar.appendChild(div);
+                    });
 
                     let hasPrintedFirstDay = false;
 
-                    for (let d = 1; d <= lastDate; d++) {
+                    for (let d = 1; d <= lastDay; d++) {
                         const dateObj = new Date(currentYear, currentMonth - 1, d);
                         const dayOfWeek = dateObj.getDay(); 
 
@@ -229,7 +241,7 @@
                             cell.classList.add('today');
                         }
 
-                        const ymd = `${currentYear}${String(currentMonth).padStart(2, '0')}${String(d).padStart(2, '0')}`;
+                        const ymd = `${yearStr}${monthStr}${String(d).padStart(2, '0')}`;
                         const menu = menuMap[ymd] || ""; 
 
                         cell.innerHTML = `<span class="day-number">${d}일</span><div class="menu-text">${menu}</div>`;
@@ -238,7 +250,7 @@
                 })
                 .catch(err => {
                     console.error(err);
-                    statusMsg.innerText = '정보를 불러오지 못했습니다. (네트워크 오류 등)';
+                    statusMsg.innerText = '정보를 불러오는 중 오류가 발생했습니다.';
                 });
         }
     </script>
