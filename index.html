@@ -3,289 +3,271 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>대전외고 월간 급식</title>
+    <title>기성중중 주간급식주간급식</ti
     <style>
         :root {
             --bg-color: #ffffff;
+            --card-bg: #fdfdfd;
             --text-color: #37352f;
             --border-color: #e0e0e0;
+            --accent-color: #eb5757; /* 포인트 컬러 */
             --header-bg: #f7f6f3;
-            --today-bg: #e3f2fd;
-            --accent-color: #eb5757;
         }
 
         body {
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
             margin: 0;
-            padding: 10px;
+            padding: 15px;
             background-color: var(--bg-color);
             color: var(--text-color);
             display: flex;
             flex-direction: column;
             align-items: center;
-            height: 100vh; /* 한 화면에 맞춤 */
-            box-sizing: border-box;
         }
 
-        /* 1. 상단 네비게이션 */
+        /* 1. 상단 날짜 컨트롤 */
         .header {
             display: flex;
             align-items: center;
-            justify-content: center;
-            gap: 20px;
-            margin-bottom: 10px;
+            justify-content: space-between;
             width: 100%;
+            max-width: 500px;
+            margin-bottom: 20px;
+            padding: 10px 15px;
+            background-color: var(--header-bg);
+            border-radius: 12px;
+            box-sizing: border-box;
         }
-        .title {
-            font-size: 1.2rem;
-            font-weight: 700;
-            min-width: 120px;
+
+        .title-area {
             text-align: center;
         }
-        .nav-btn {
-            background: none;
-            border: 1px solid var(--border-color);
-            border-radius: 4px;
-            cursor: pointer;
-            padding: 4px 10px;
-            font-size: 1rem;
-            color: var(--text-color);
+        .main-title {
+            font-size: 1.1rem;
+            font-weight: 700;
+            margin-bottom: 4px;
         }
-        .nav-btn:hover { background-color: var(--header-bg); }
+        .sub-date {
+            font-size: 0.8rem;
+            color: #666;
+        }
 
-        /* 2. 달력 전체 틀 (가로형) */
-        .calendar-wrapper {
+        .nav-btn {
+            background: #fff;
+            border: 1px solid #ddd;
+            border-radius: 50%;
+            width: 32px;
+            height: 32px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #555;
+            transition: 0.2s;
+        }
+        .nav-btn:hover {
+            background-color: var(--accent-color);
+            border-color: var(--accent-color);
+            color: white;
+        }
+
+        /* 2. 급식 리스트 */
+        .meal-list {
             width: 100%;
-            max-width: 1000px; /* 넓게 퍼지도록 설정 */
-            flex-grow: 1;      /* 화면 남은 공간 채우기 */
+            max-width: 500px;
             display: flex;
             flex-direction: column;
+            gap: 12px;
+        }
+
+        .meal-card {
+            background-color: var(--card-bg);
             border: 1px solid var(--border-color);
             border-radius: 8px;
-            overflow: hidden; /* 둥근 모서리 유지 */
-        }
-
-        /* 3. 요일 헤더 (월~금) */
-        .days-row {
-            display: grid;
-            grid-template-columns: repeat(5, 1fr); /* 5등분 */
-            background-color: var(--header-bg);
-            border-bottom: 1px solid var(--border-color);
-        }
-        .day-header {
-            padding: 8px;
-            text-align: center;
-            font-weight: 600;
-            font-size: 0.9rem;
-            border-right: 1px solid var(--border-color);
-        }
-        .day-header:last-child { border-right: none; }
-
-        /* 4. 날짜 그리드 */
-        .calendar-grid {
-            display: grid;
-            grid-template-columns: repeat(5, 1fr); /* 5등분 */
-            flex-grow: 1; /* 남은 높이 채우기 */
-            overflow-y: auto; /* 내용 많으면 스크롤 */
-        }
-
-        .day-cell {
-            border-bottom: 1px solid var(--border-color);
-            border-right: 1px solid var(--border-color);
-            padding: 8px;
-            font-size: 0.8rem;
+            padding: 15px;
             position: relative;
-            min-height: 100px; /* 최소 높이 보장 */
-            display: flex;
-            flex-direction: column;
         }
-        /* 5열마다 오른쪽 테두리 제거 */
-        .day-cell:nth-child(5n) { border-right: none; }
 
-        .day-number {
+        /* 오늘 날짜 강조 */
+        .meal-card.today {
+            border: 2px solid var(--accent-color);
+            background-color: #fff5f5;
+        }
+        .meal-card.today::after {
+            content: "Today";
+            position: absolute;
+            top: 10px; right: 10px;
+            background: var(--accent-color);
+            color: white;
+            font-size: 0.7rem;
+            padding: 2px 6px;
+            border-radius: 4px;
             font-weight: bold;
-            margin-bottom: 6px;
-            color: #888;
-            font-size: 0.85rem;
         }
-        
-        .today { background-color: var(--today-bg); }
-        .today .day-number { color: var(--accent-color); }
 
-        .menu-text {
-            font-size: 0.75rem; /* 글자 크기 최적화 */
-            line-height: 1.4;
-            color: var(--text-color);
+        .card-header {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 10px;
+            padding-bottom: 8px;
+            border-bottom: 1px dashed #ddd;
+        }
+
+        .day-name { font-weight: 700; font-size: 1rem; }
+        .date-num { font-size: 0.85rem; color: #888; }
+        
+        .menu-content {
+            font-size: 0.9rem;
+            line-height: 1.6;
+            color: #333;
             word-break: keep-all;
         }
+        
+        .no-data { color: #aaa; font-style: italic; font-size: 0.85rem; }
+        .loading { margin-top: 20px; color: #888; font-size: 0.9rem; }
 
-        .loading-overlay {
-            position: fixed;
-            top: 50%; left: 50%;
-            transform: translate(-50%, -50%);
-            background: rgba(255,255,255,0.9);
-            padding: 20px;
-            border-radius: 8px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-            display: none;
-            font-weight: bold;
-            color: #555;
-        }
-
-        /* 모바일 대응 (좁아지면 세로로) */
-        @media (max-width: 700px) {
-            .calendar-grid { display: flex; flex-direction: column; }
-            .days-row { display: none; }
-            .day-cell { border-right: none; min-height: auto; }
-            .calendar-wrapper { border: none; }
-        }
-
+        /* 다크 모드 */
         @media (prefers-color-scheme: dark) {
             :root {
                 --bg-color: #191919;
-                --text-color: #d9d9d9;
-                --border-color: #3f3f3f;
+                --card-bg: #252525;
+                --text-color: #e0e0e0;
+                --border-color: #444;
                 --header-bg: #2f2f2f;
-                --today-bg: #2c3e50;
             }
-            .loading-overlay { background: rgba(0,0,0,0.8); color: #fff; }
+            .nav-btn { background: #333; border-color: #555; color: #ddd; }
+            .menu-content { color: #d0d0d0; }
         }
     </style>
 </head>
 <body>
 
     <div class="header">
-        <button class="nav-btn" onclick="changeMonth(-1)">&#10094;</button>
-        <div class="title" id="month-title"></div>
-        <button class="nav-btn" onclick="changeMonth(1)">&#10095;</button>
-    </div>
-
-    <div class="calendar-wrapper">
-        <div class="days-row">
-            <div class="day-header">월</div>
-            <div class="day-header">화</div>
-            <div class="day-header">수</div>
-            <div class="day-header">목</div>
-            <div class="day-header">금</div>
+        <button class="nav-btn" onclick="moveWeek(-7)">&#10094;</button>
+        <div class="title-area">
+            <div class="main-title" id="week-title">로딩 중...</div>
+            <div class="sub-date" id="period-title"></div>
         </div>
-        <div class="calendar-grid" id="calendar"></div>
+        <button class="nav-btn" onclick="moveWeek(7)">&#10095;</button>
     </div>
 
-    <div id="loading" class="loading-overlay">데이터 불러오는 중...</div>
+    <div id="meal-list" class="meal-list"></div>
+    <div id="loading" class="loading">급식 정보를 가져오는 중입니다...</div>
 
     <script>
-        // ▼▼▼ 대전외고 + 용량 해제 설정 ▼▼▼
+        // ▼▼▼ 학교 정보 설정 ▼▼▼
         const ATPT_OFCDC_SC_CODE = "G10"; 
-        const SD_SCHUL_CODE = "7451011"; // 대전외국어고등학교
-        const PAGE_SIZE = "1000"; // 1000개 요청 (끊김 방지 핵심!)
-        const MEAL_CODE = "2";    // 점심만
-        // ▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲
+        const SD_SCHUL_CODE = "7451011"; // 기성중학교
+        const MEAL_CODE = "2"; // 2=중식(점심)만 표시 (1=조식, 3=석식)
+        // ▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲
 
-        let currentYear = new Date().getFullYear();
-        let currentMonth = new Date().getMonth() + 1;
+        let currentBaseDate = new Date(); // 기준 날짜 (오늘)
 
-        renderCalendar();
+        // 시작
+        renderWeek();
 
-        function changeMonth(delta) {
-            currentMonth += delta;
-            if (currentMonth > 12) { currentMonth = 1; currentYear++; }
-            else if (currentMonth < 1) { currentMonth = 12; currentYear--; }
-            renderCalendar();
+        function moveWeek(days) {
+            currentBaseDate.setDate(currentBaseDate.getDate() + days);
+            renderWeek();
         }
 
-        function renderCalendar() {
-            const calendar = document.getElementById('calendar');
-            const title = document.getElementById('month-title');
-            const loading = document.getElementById('loading');
+        function renderWeek() {
+            const listContainer = document.getElementById('meal-list');
+            const titleEl = document.getElementById('week-title');
+            const periodEl = document.getElementById('period-title');
+            const loadingEl = document.getElementById('loading');
 
-            title.innerText = `${currentYear}년 ${currentMonth}월`;
-            calendar.innerHTML = '';
-            loading.style.display = 'block';
+            listContainer.innerHTML = '';
+            loadingEl.style.display = 'block';
 
-            // 1. 달력 날짜 계산
-            const lastDate = new Date(currentYear, currentMonth, 0).getDate();
-            const fromDate = `${currentYear}${String(currentMonth).padStart(2, '0')}01`;
-            const toDate = `${currentYear}${String(currentMonth).padStart(2, '0')}${lastDate}`;
+            // 1. 이번 주 월요일 계산
+            const day = currentBaseDate.getDay(); // 0(일)~6(토)
+            const diff = currentBaseDate.getDate() - day + (day == 0 ? -6 : 1); // 월요일로 보정
+            
+            const monday = new Date(currentBaseDate);
+            monday.setDate(diff);
+            
+            const friday = new Date(monday);
+            friday.setDate(monday.getDate() + 4);
 
-            // 2. API 호출 (pSize=1000 필수)
-            const url = `https://open.neis.go.kr/hub/mealServiceDietInfo?Type=json&pIndex=1&pSize=${PAGE_SIZE}&ATPT_OFCDC_SC_CODE=${ATPT_OFCDC_SC_CODE}&SD_SCHUL_CODE=${SD_SCHUL_CODE}&MLSV_FROM_YMD=${fromDate}&MLSV_TO_YMD=${toDate}&MMEAL_SC_CODE=${MEAL_CODE}&_t=${Date.now()}`;
+            // 2. 제목 업데이트
+            titleEl.innerText = `${monday.getMonth() + 1}월 ${getWeekNo(monday)}주차 급식`;
+            periodEl.innerText = `${formatDate(monday, '.')} ~ ${formatDate(friday, '.')}`;
+
+            // 3. API 호출 (월~금 5일치만 딱 호출해서 가볍게)
+            const fromYmd = formatDate(monday, '');
+            const toYmd = formatDate(friday, '');
+            
+            // 캐시 방지용 &_t 추가
+            const url = `https://open.neis.go.kr/hub/mealServiceDietInfo?Type=json&pIndex=1&pSize=100&ATPT_OFCDC_SC_CODE=${ATPT_OFCDC_SC_CODE}&SD_SCHUL_CODE=${SD_SCHUL_CODE}&MLSV_FROM_YMD=${fromYmd}&MLSV_TO_YMD=${toYmd}&MMEAL_SC_CODE=${MEAL_CODE}&_t=${Date.now()}`;
 
             fetch(url)
                 .then(res => res.json())
                 .then(data => {
-                    loading.style.display = 'none';
-                    
-                    // 3. 데이터 매핑 (날짜 -> 메뉴)
+                    loadingEl.style.display = 'none';
                     let menuMap = {};
+
                     if (data.mealServiceDietInfo) {
                         data.mealServiceDietInfo[1].row.forEach(item => {
                             let cleanMenu = item.DDISH_NM
-                                .replace(/[0-9.]/g, "")      // 알레르기 번호 제거
-                                .replace(/\(\)/g, "")        // 빈 괄호 제거
-                                .replace(/<br\/>/g, "<br>"); // 줄바꿈
+                                .replace(/[0-9.]/g, "")
+                                .replace(/\(\)/g, "")
+                                .replace(/<br\/>/g, "<br>"); // 줄바꿈 유지
                             menuMap[item.MLSV_YMD] = cleanMenu;
                         });
                     }
 
-                    // 4. 칸 채우기 (데이터 없어도 빈 칸 생성)
-                    let hasPrintedFirstDay = false;
+                    // 4. 월~금 카드 만들기 Loop
+                    const daysChar = ['월', '화', '수', '목', '금'];
+                    const todayStr = formatDate(new Date(), '');
 
-                    for (let d = 1; d <= lastDate; d++) {
-                        const dateObj = new Date(currentYear, currentMonth - 1, d);
-                        const dayOfWeek = dateObj.getDay(); // 0:일 ~ 6:토
+                    for (let i = 0; i < 5; i++) {
+                        const targetDay = new Date(monday);
+                        targetDay.setDate(monday.getDate() + i);
+                        const targetYmd = formatDate(targetDay, '');
+                        const displayDate = formatDate(targetDay, '.').slice(5); // 12.24 형식
 
-                        // 주말 제외
-                        if (dayOfWeek === 0 || dayOfWeek === 6) continue;
+                        const card = document.createElement('div');
+                        card.className = 'meal-card';
+                        
+                        // 오늘 날짜 하이라이트
+                        if (targetYmd === todayStr) card.classList.add('today');
 
-                        // 첫 주 시작 요일 맞추기 (빈 칸 채우기)
-                        if (!hasPrintedFirstDay) {
-                            const emptyCells = dayOfWeek - 1; 
-                            for (let i = 0; i < emptyCells; i++) {
-                                const emptyDiv = document.createElement('div');
-                                emptyDiv.className = 'day-cell'; // 빈 칸도 테두리 유지
-                                emptyDiv.style.background = '#fafafa'; // 빈 칸은 회색조
-                                calendar.appendChild(emptyDiv);
-                            }
-                            hasPrintedFirstDay = true;
-                        }
+                        const menuContent = menuMap[targetYmd] 
+                            ? menuMap[targetYmd] 
+                            : "<span class='no-data'>급식 정보가 없습니다.</span>";
 
-                        // 날짜 셀 생성
-                        const cell = document.createElement('div');
-                        cell.className = 'day-cell';
-
-                        const today = new Date();
-                        if (currentYear === today.getFullYear() && 
-                            currentMonth === (today.getMonth() + 1) && 
-                            d === today.getDate()) {
-                            cell.classList.add('today');
-                        }
-
-                        const ymd = `${currentYear}${String(currentMonth).padStart(2, '0')}${String(d).padStart(2, '0')}`;
-                        const menu = menuMap[ymd] || ""; 
-
-                        cell.innerHTML = `
-                            <div class="day-number">${d}일</div>
-                            <div class="menu-text">${menu}</div>
+                        card.innerHTML = `
+                            <div class="card-header">
+                                <span class="day-name">${daysChar[i]}</span>
+                                <span class="date-num">${displayDate}</span>
+                            </div>
+                            <div class="menu-content">${menuContent}</div>
                         `;
-                        calendar.appendChild(cell);
+                        listContainer.appendChild(card);
                     }
-                    
-                    // 마지막 날 이후 남은 칸 채우기 (레이아웃 깨짐 방지)
-                    const lastDayOfWeek = new Date(currentYear, currentMonth - 1, lastDate).getDay();
-                    if (lastDayOfWeek >= 1 && lastDayOfWeek < 5) {
-                        for(let i = 0; i < (5 - lastDayOfWeek); i++) {
-                             const emptyDiv = document.createElement('div');
-                             emptyDiv.className = 'day-cell';
-                             emptyDiv.style.background = '#fafafa';
-                             calendar.appendChild(emptyDiv);
-                        }
-                    }
-
                 })
                 .catch(err => {
-                    loading.innerText = "오류 발생: 새로고침 해주세요.";
+                    loadingEl.innerText = "정보를 불러오지 못했습니다.";
                     console.error(err);
                 });
+        }
+
+        // 날짜 포맷 함수 (YYYYMMDD)
+        function formatDate(date, sep) {
+            const y = date.getFullYear();
+            const m = String(date.getMonth() + 1).padStart(2, '0');
+            const d = String(date.getDate()).padStart(2, '0');
+            return sep === '' ? `${y}${m}${d}` : `${y}${sep}${m}${sep}${d}`;
+        }
+
+        // 주차 계산 함수
+        function getWeekNo(d) {
+            const firstDay = new Date(d.getFullYear(), d.getMonth(), 1);
+            const dayOfWeek = firstDay.getDay(); 
+            const offset = (dayOfWeek === 0 ? 6 : dayOfWeek - 1); 
+            return Math.ceil((d.getDate() + offset) / 7);
         }
     </script>
 </body>
